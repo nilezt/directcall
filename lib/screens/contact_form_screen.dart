@@ -1,4 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:uuid/uuid.dart';
+import '../models/contact.dart';
+import '../services/contact_service.dart';
 
 class ContactFormScreen extends StatefulWidget {
   const ContactFormScreen({super.key});
@@ -12,6 +17,17 @@ class _ContactFormScreenState extends State<ContactFormScreen> {
   String _name = '';
   String _phone = '';
   bool _isEmergencyFavorite = false;
+  File? _imageFile;
+  final ImagePicker _picker = ImagePicker();
+
+  Future<void> _pickImage() async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _imageFile = File(pickedFile.path);
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +48,10 @@ class _ContactFormScreenState extends State<ContactFormScreen> {
                     CircleAvatar(
                       radius: 60,
                       backgroundColor: Colors.grey.shade300,
-                      child: const Icon(Icons.person, size: 60, color: Colors.white),
+                      backgroundImage: _imageFile != null ? FileImage(_imageFile!) : null,
+                      child: _imageFile == null
+                          ? const Icon(Icons.person, size: 60, color: Colors.white)
+                          : null,
                     ),
                     Positioned(
                       bottom: 0,
@@ -44,9 +63,7 @@ class _ContactFormScreenState extends State<ContactFormScreen> {
                         ),
                         child: IconButton(
                           icon: const Icon(Icons.camera_alt, color: Colors.white),
-                          onPressed: () {
-                            // Add photo logic
-                          },
+                          onPressed: _pickImage,
                         ),
                       ),
                     ),
@@ -104,11 +121,23 @@ class _ContactFormScreenState extends State<ContactFormScreen> {
               ),
               const SizedBox(height: 48),
               ElevatedButton(
-                onPressed: () {
+                onPressed: () async {
                   if (_formKey.currentState!.validate()) {
                     _formKey.currentState!.save();
-                    // Save contact logic
-                    Navigator.pop(context);
+                    
+                    final newContact = Contact(
+                      id: const Uuid().v4(),
+                      name: _name,
+                      phoneNumber: _phone,
+                      imageUrl: _imageFile?.path,
+                      isEmergencyFavorite: _isEmergencyFavorite,
+                    );
+                    
+                    await ContactService().saveContact(newContact);
+                    
+                    if (context.mounted) {
+                      Navigator.pop(context, true);
+                    }
                   }
                 },
                 style: ElevatedButton.styleFrom(

@@ -12,4 +12,24 @@ class Contact {
     this.imageUrl,
     this.isEmergencyFavorite = false,
   });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'phoneNumber': phoneNumber,
+      'imageUrl': imageUrl,
+      'isEmergencyFavorite': isEmergencyFavorite,
+    };
+  }
+
+  factory Contact.fromJson(Map<String, dynamic> json) {
+    return Contact(
+      id: json['id'],
+      name: json['name'],
+      phoneNumber: json['phoneNumber'],
+      imageUrl: json['imageUrl'],
+      isEmergencyFavorite: json['isEmergencyFavorite'] ?? false,
+    );
+  }
 }

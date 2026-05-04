@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../models/contact.dart';
 
@@ -39,7 +40,7 @@ class _CallScreenState extends State<CallScreen> {
             const Spacer(),
             CircleAvatar(
               radius: 100,
-              backgroundImage: widget.contact.imageUrl != null ? NetworkImage(widget.contact.imageUrl!) : null,
+              backgroundImage: widget.contact.imageUrl != null ? FileImage(File(widget.contact.imageUrl!)) as ImageProvider : null,
               backgroundColor: Colors.grey.shade800,
               child: widget.contact.imageUrl == null
                   ? const Icon(Icons.person, size: 100, color: Colors.white)

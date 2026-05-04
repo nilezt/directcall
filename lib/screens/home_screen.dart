@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../models/contact.dart';
 import 'contact_form_screen.dart';
-import 'call_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'dart:io';
+import '../services/contact_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -11,21 +13,22 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // Mock data for demonstration based on the prototype.
-  // Initially empty to show empty state, or populated to show grid.
-  List<Contact> contacts = [
-    Contact(id: '1', name: 'Arthur', phoneNumber: '555-0101', imageUrl: 'https://i.pravatar.cc/150?u=1'),
-    Contact(id: '2', name: 'Martha', phoneNumber: '555-0102', imageUrl: 'https://i.pravatar.cc/150?u=2'),
-    Contact(id: '3', name: 'George', phoneNumber: '555-0103', imageUrl: 'https://i.pravatar.cc/150?u=3'),
-    Contact(id: '4', name: 'Evelyn', phoneNumber: '555-0104', imageUrl: 'https://i.pravatar.cc/150?u=4'),
-    Contact(id: '5', name: 'Samuel', phoneNumber: '555-0105', imageUrl: 'https://i.pravatar.cc/150?u=5'),
-    Contact(id: '6', name: 'Linda', phoneNumber: '555-0106', imageUrl: 'https://i.pravatar.cc/150?u=6'),
-    Contact(id: '7', name: 'Frank', phoneNumber: '555-0107', imageUrl: 'https://i.pravatar.cc/150?u=7'),
-    Contact(id: '8', name: 'Alice', phoneNumber: '555-0108', imageUrl: 'https://i.pravatar.cc/150?u=8'),
-  ];
-  
-  // Set this to true to see the empty state like the first prototype screen.
-  bool _showEmptyState = false;
+  List<Contact> contacts = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadContacts();
+  }
+
+  Future<void> _loadContacts() async {
+    final loadedContacts = await ContactService().getContacts();
+    setState(() {
+      contacts = loadedContacts;
+      _isLoading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,15 +40,20 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         title: const Text('My Contacts', style: TextStyle(fontWeight: FontWeight.bold)),
       ),
-      body: _showEmptyState || contacts.isEmpty
-          ? _buildEmptyState()
-          : _buildContactGrid(),
+      body: _isLoading 
+          ? const Center(child: CircularProgressIndicator())
+          : contacts.isEmpty
+              ? _buildEmptyState()
+              : _buildContactGrid(),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
+        onPressed: () async {
+          final result = await Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const ContactFormScreen()),
           );
+          if (result == true) {
+            _loadContacts();
+          }
         },
         backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Colors.white,
@@ -124,13 +132,14 @@ class _HomeScreenState extends State<HomeScreen> {
             itemBuilder: (context, index) {
               final contact = contacts[index];
               return GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => CallScreen(contact: contact),
-                    ),
+                onTap: () async {
+                  final Uri launchUri = Uri(
+                    scheme: 'tel',
+                    path: contact.phoneNumber,
                   );
+                  if (await canLaunchUrl(launchUri)) {
+                    await launchUrl(launchUri);
+                  }
                 },
                 child: Column(
                   children: [
@@ -152,7 +161,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         child: CircleAvatar(
                           radius: 50,
-                          backgroundImage: NetworkImage(contact.imageUrl ?? ''),
+                          backgroundImage: contact.imageUrl != null ? FileImage(File(contact.imageUrl!)) as ImageProvider : null,
                           backgroundColor: Colors.grey.shade300,
                           child: contact.imageUrl == null
                               ? const Icon(Icons.person, size: 50, color: Colors.white)
