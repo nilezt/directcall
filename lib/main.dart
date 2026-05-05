@@ -21,12 +21,11 @@ class MyApp extends StatelessWidget {
           primary: const Color(0xFF0D47A1),
           secondary: const Color(0xFF1976D2),
           surface: Colors.white,
-          background: const Color(0xFFF5F7FA), // Light grayish blue for background
         ),
         useMaterial3: true,
         appBarTheme: const AppBarTheme(
           backgroundColor: Colors.white,
-          foregroundColor: const Color(0xFF0D47A1),
+          foregroundColor: Color(0xFF0D47A1),
           centerTitle: true,
           elevation: 0,
         ),

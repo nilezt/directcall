@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/contact.dart';
 
@@ -17,7 +18,7 @@ class ContactService {
       final List<dynamic> decodedList = json.decode(contactsJsonString);
       return decodedList.map((item) => Contact.fromJson(item)).toList();
     } catch (e) {
-      print('Error decoding contacts: $e');
+      debugPrint('Error decoding contacts: $e');
       return [];
     }
   }

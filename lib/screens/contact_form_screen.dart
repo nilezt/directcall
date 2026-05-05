@@ -21,7 +21,12 @@ class _ContactFormScreenState extends State<ContactFormScreen> {
   final ImagePicker _picker = ImagePicker();
 
   Future<void> _pickImage() async {
-    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    final pickedFile = await _picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 50, // Compress to 50% quality
+      maxWidth: 600,    // Limit width
+      maxHeight: 600,   // Limit height
+    );
     if (pickedFile != null) {
       setState(() {
         _imageFile = File(pickedFile.path);
@@ -80,8 +85,16 @@ class _ContactFormScreenState extends State<ContactFormScreen> {
                   fillColor: Colors.white,
                 ),
                 style: const TextStyle(fontSize: 20),
-                validator: (value) => value!.isEmpty ? 'Please enter a name' : null,
-                onSaved: (value) => _name = value!,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Please enter a name';
+                  }
+                  if (value.trim().length < 2) {
+                    return 'Name must be at least 2 characters';
+                  }
+                  return null;
+                },
+                onSaved: (value) => _name = value!.trim(),
               ),
               const SizedBox(height: 24),
               TextFormField(
@@ -94,8 +107,20 @@ class _ContactFormScreenState extends State<ContactFormScreen> {
                 ),
                 style: const TextStyle(fontSize: 20),
                 keyboardType: TextInputType.phone,
-                validator: (value) => value!.isEmpty ? 'Please enter a phone number' : null,
-                onSaved: (value) => _phone = value!,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Please enter a phone number';
+                  }
+                  final phoneRegExp = RegExp(r'^\+?\d+$');
+                  if (!phoneRegExp.hasMatch(value.trim())) {
+                    return 'Please enter a valid phone number (+ and digits only)';
+                  }
+                  if (value.trim().replaceAll('+', '').length < 3) {
+                    return 'Phone number is too short';
+                  }
+                  return null;
+                },
+                onSaved: (value) => _phone = value!.trim(),
               ),
               const SizedBox(height: 24),
               Container(
@@ -111,7 +136,7 @@ class _ContactFormScreenState extends State<ContactFormScreen> {
                   ),
                   subtitle: const Text('Prioritize this contact for quick access'),
                   value: _isEmergencyFavorite,
-                  activeColor: Theme.of(context).colorScheme.primary,
+                  activeThumbColor: Theme.of(context).colorScheme.primary,
                   onChanged: (bool value) {
                     setState(() {
                       _isEmergencyFavorite = value;
@@ -136,6 +161,15 @@ class _ContactFormScreenState extends State<ContactFormScreen> {
                     await ContactService().saveContact(newContact);
                     
                     if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: const Text('Contact saved successfully!', style: TextStyle(fontSize: 16)),
+                          backgroundColor: Colors.green.shade700,
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          margin: const EdgeInsets.all(16),
+                        ),
+                      );
                       Navigator.pop(context, true);
                     }
                   }
